@@ -1,4 +1,4 @@
-# The Reggie Report
+# Reggie Miller Likes Good News
 
 Weekly newspaper for the Reggie Miller Looks Good fantasy basketball league.
 
