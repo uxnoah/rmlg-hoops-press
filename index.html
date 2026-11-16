@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Reggie Report</title>
+<meta name="description" content="Weekly paper of the Reggie Miller Looks Good fantasy basketball league.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Oswald:wght@600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap">
+<style>
+/* Same newsprint identity as the weekly paper: big condensed masthead, serif text, one hot accent. */
+:root {
+  --ink: #121417; --ink-2: #4a4f57; --ink-3: #8a9099; --hair: #d9dcdf; --paper: #ffffff; --ground: #e9ecef; --hot: #c2410c;
+  --head: "Oswald", "Arial Narrow", "Helvetica Neue", sans-serif;
+  --text: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --data: "Barlow Condensed", "Arial Narrow", sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 400 17px/1.55 var(--text); }
+.sheet { max-width: 760px; margin: 32px auto; background: var(--paper); padding: 34px max(20px, 5vw) 28px; }
+@media (max-width: 800px) { .sheet { margin: 0; } }
+.mast { text-align: center; border-bottom: 4px double var(--ink); padding-bottom: 10px; }
+.mast h1 { margin: 0; font: 700 clamp(40px, 9vw, 72px)/1 var(--head); text-transform: uppercase; letter-spacing: .02em; }
+.mast .line { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; border-top: 1px solid var(--ink); margin-top: 10px; padding-top: 6px;
+  font: 600 13px/1.2 var(--data); letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2); }
+.latest { display: block; text-decoration: none; color: inherit; margin: 26px 0 8px; padding: 18px 20px; border: 2px solid var(--ink); }
+.latest:hover, .latest:focus-visible { border-color: var(--hot); outline: none; }
+.latest .k { font: 600 13px/1 var(--data); letter-spacing: .16em; text-transform: uppercase; color: var(--hot); }
+.latest .t { font: 700 36px/1.05 var(--head); text-transform: uppercase; margin: 6px 0 4px; }
+.latest .s { color: var(--ink-2); font-size: 15px; }
+h2 { display: flex; align-items: center; gap: 12px; margin: 28px 0 6px; font: 700 15px/1 var(--data); letter-spacing: .2em; text-transform: uppercase; }
+h2::after { content: ""; flex: 1; border-top: 2px solid var(--ink); }
+ul { list-style: none; margin: 0; padding: 0; }
+li a { display: flex; justify-content: space-between; gap: 12px; padding: 11px 2px; border-bottom: 1px solid var(--hair); color: inherit; text-decoration: none; }
+li a:hover, li a:focus-visible { color: var(--hot); outline: none; }
+li .w { font: 600 20px/1.2 var(--head); text-transform: uppercase; }
+li .go { font: 600 14px/1.4 var(--data); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); }
+.note { color: var(--ink-2); font-size: 15px; padding: 14px 0; }
+footer { margin-top: 26px; padding-top: 8px; border-top: 4px double var(--ink); font: 500 12px/1.4 var(--data); letter-spacing: .12em; text-transform: uppercase; color: var(--ink-3); }
+</style>
+</head>
+<body>
+<main class="sheet">
+  <header class="mast">
+    <h1>The Reggie Report</h1>
+    <div class="line"><span>Reggie Miller Looks Good</span><span>Every Monday</span></div>
+  </header>
+  <div id="latest"></div>
+  <h2>Every edition</h2>
+  <ul id="list"><li class="note">Loading the archive…</li></ul>
+  <footer>Stats from ESPN · Category standings</footer>
+</main>
+<script>
+// Lists every paper in the papers/ folder. Add a paper by uploading its HTML file there.
+const REPO = "uxnoah/rmlg-hoops-press";
+const el = (tag, cls, text) => { const n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; };
+
+async function load() {
+  const list = document.getElementById("list");
+  try {
+    const r = await fetch(`https://api.github.com/repos/${REPO}/contents/papers`, { headers: { Accept: "application/vnd.github+json" } });
+    if (!r.ok) throw new Error(r.status === 403 ? "GitHub is limiting requests right now. Try again in a few minutes." : `GitHub answered ${r.status}.`);
+    const files = (await r.json())
+      .filter((f) => f.type === "file" && /\.html?$/i.test(f.name))
+      .map((f) => ({ name: f.name, week: +((f.name.match(/week[-_ ]?(\d+)/i) || [])[1] || 0) }))
+      .filter((f) => f.week)
+      .sort((a, b) => b.week - a.week || b.name.localeCompare(a.name));
+    if (!files.length) { list.replaceChildren(el("li", "note", "No editions yet. The first one arrives on a Monday.")); return; }
+    const href = (f) => "papers/" + encodeURIComponent(f.name);
+    const top = files[0];
+    const latest = el("a", "latest"); latest.href = href(top);
+    latest.append(el("div", "k", "Latest edition"), el("div", "t", `Week ${top.week}`), el("div", "s", "Read this week's paper"));
+    document.getElementById("latest").replaceChildren(latest);
+    list.replaceChildren(...files.map((f) => {
+      const a = el("a"); a.href = href(f);
+      a.append(el("span", "w", `Week ${f.week}`), el("span", "go", "Read"));
+      const li = el("li"); li.append(a); return li;
+    }));
+  } catch (e) {
+    list.replaceChildren(el("li", "note", "Could not load the list of editions. " + e.message));
+  }
+}
+load();
+</script>
+</body>
+</html>
